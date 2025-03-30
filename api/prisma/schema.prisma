@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Conversations {
+  id          String    @id @db.VarChar(255)
+  sellerId    Int
+  buyerId     Int
+  redBySeller Boolean
+  redByBuyer  Boolean
+  lastMessage String?   @db.Text
+  created_at  DateTime? @default(now()) @db.Timestamp(0)
+  updated_at  DateTime? @default(now()) @db.Timestamp(0)
+}
+
+model Gigs {
+  id             Int       @id @default(autoincrement())
+  userId         Int
+  title          String    @db.VarChar(255)
+  desc           String    @db.Text
+  totalStarts    Int?      @default(0)
+  startNumber    Int?      @default(0)
+  cat            String    @db.VarChar(100)
+  price          Decimal   @db.Decimal(10, 2)
+  cover          String    @db.VarChar(255)
+  images         Json?
+  shortTitle     String    @db.VarChar(255)
+  shortDesc      String    @db.Text
+  deliveryTime   Int
+  revisionNumber Int
+  features       Json?
+  sales          Int?      @default(0)
+  created_at     DateTime? @default(now()) @db.Timestamp(0)
+  updated_at     DateTime? @default(now()) @db.Timestamp(0)
+}
+
+model Messages {
+  id             Int       @id @default(autoincrement())
+  ConversationId Int
+  UserId         Int
+  des            String    @db.Text
+  created_at     DateTime? @default(now()) @db.Timestamp(0)
+  updated_at     DateTime? @default(now()) @db.Timestamp(0)
+}
+
+model Orders {
+  id             Int       @id @default(autoincrement())
+  gigId          Int
+  img            String?   @db.VarChar(255)
+  title          String    @db.VarChar(255)
+  price          Decimal   @db.Decimal(10, 2)
+  sellerId       Int
+  buyerId        Int
+  isCompleted    Boolean?  @default(false)
+  payment_intent String    @db.VarChar(255)
+  created_at     DateTime? @default(now()) @db.Timestamp(0)
+  updated_at     DateTime? @default(now()) @db.Timestamp(0)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model Reviews {
+  id         Int       @id @default(autoincrement())
+  gigId      Int
+  userID     Int
+  start      Int
+  desc       String    @db.Text
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+  updated_at DateTime? @default(now()) @db.Timestamp(0)
+}
+
+model Users {
+  id         Int       @id @default(autoincrement())
+  userName   String    @unique(map: "userName") @db.VarChar(255)
+  email      String    @unique(map: "email") @db.VarChar(255)
+  password   String    @db.VarChar(255)
+  img        String?   @db.VarChar(255)
+  country    String?   @db.VarChar(100)
+  phone      String?   @db.VarChar(20)
+  desc       String?   @db.Text
+  isSeller   Boolean?  @default(false)
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+  updated_at DateTime? @default(now()) @db.Timestamp(0)
+  face_app_id String?   @db.VarChar(255)
+}
