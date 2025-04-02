@@ -2,15 +2,17 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { transporter } from '../config/transporter.js';
 import { createAccessToken } from '../config/jwt.js';
+import { createError } from '../utils/createError.js';
+
 const prisma = new PrismaClient()
 export const authController = {
-    register: async (req, res) => {
+    register: async (req, res, next) => {
         try {
             const { userName, email, password, country } = req.body;
 
             // Kiểm tra dữ liệu đầu vào
             if (!userName || !email || !password) {
-                return res.status(400).json({ message: 'Vui lòng điền đầy đủ thông tin' });
+                return next(createError( 400, 'Vui lòng nhập đầy đủ thông tin'));
             }
 
             // Kiểm tra xem email đã tồn tại chưa
@@ -19,7 +21,7 @@ export const authController = {
             });
 
             if (existingUser) {
-                return res.status(400).json({ message: 'Email đã được sử dụng' });
+                return next(createError( 400, 'Email đã tồn tại'));
             }
 
             // Mã hóa mật khẩu
@@ -45,7 +47,7 @@ export const authController = {
             }
             // gửi mail
             transporter.sendMail(welcomeMail, (error, info)=>{
-                if(error) return res.status(500).json("Gửi mail thất bại")
+                if(error) return next(createError( 500, 'Gửi mail thất bại'))
                 
 
             })
@@ -62,20 +64,17 @@ export const authController = {
 
         } catch (error) {
             console.error('Lỗi trong quá trình đăng ký:', error);
-            res.status(500).json({
-                message: 'Đã xảy ra lỗi server',
-                error: error.message
-            });
+            next(createError( 500, 'Lỗi trong quá trình đăng ký'));
         } finally {
             await prisma.$disconnect();
         }
     },
-    login: async (req, res) => {
+    login: async (req, res, next) => {
         try {
             // 1. Kiểm tra và lấy dữ liệu đầu vào
             const { email, password } = req.body;
             if (!email || !password) {
-                return res.status(400).json({ message: "Vui lòng cung cấp email và mật khẩu" });
+                return next(createError( 400, "Email và password không được để trống"));
             }
 
             // 2. Tìm user trong database
@@ -84,20 +83,18 @@ export const authController = {
             });
 
             if (!userExist) {
-                return res.status(400).json({ message: "Tài khoản không tồn tại, vui lòng đăng ký" });
+                return next(createError( 404, "Tài khoản không tồn tại"));
             }
 
             // 3. Kiểm tra trường hợp login bằng Facebook
             if (!userExist.password) {
-                return res.status(400).json({
-                    message: "Tài khoản này được đăng ký qua Facebook. Vui lòng dùng Facebook để đăng nhập hoặc đặt lại mật khẩu",
-                });
+                return next(createError(400, "Vui lòng đăng nhập Facebook để tiếp tục"));
             }
 
             // 4. Kiểm tra mật khẩu
             const isPasswordValid = await bcrypt.compare(password, userExist.password);
             if (!isPasswordValid) {
-                return res.status(400).json({ message: "Tài khoản hoặc mật khẩu không đúng" });
+                return next(createError( 401, "Tài khoản hoặc mật khẩu không đúng"));
             }
 
             // 5. Tạo token
@@ -126,12 +123,60 @@ export const authController = {
             });
         } catch (error) {
             console.error("Lỗi trong quá trình đăng nhập:", error);
-            return res.status(500).json({
-                message: "Đã xảy ra lỗi server",
-                error: error.message,
-            });
+            return next(createError(500, "Lỗi hệ thống"));
         } finally {
             await prisma.$disconnect();
+        }
+    },
+    logout: async (req, res, next) => {
+        try {
+            // 1. Get the token from cookies or headers
+            const token = req.cookies?.accessToken || req.headers.authorization?.split(' ')[1];
+            
+            if (!token) {
+                return res.status(200).json({ 
+                    success: true,
+                    message: "Đã đăng xuất" 
+                });
+            }
+
+            // 2. Add token to revoked tokens list (optional)
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_KEY);
+                await prisma.revokedToken.create({
+                    data: {
+                        token: token,
+                        userId: decoded.id,
+                        expiresAt: new Date(decoded.exp * 1000) // Convert JWT exp to Date
+                    }
+                });
+            } catch (error) {
+                console.error("Error revoking token:", error);
+                // Continue with logout even if revocation fails
+            }
+
+            // 3. Clear cookies
+            res.clearCookie("accessToken", {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "strict"
+            });
+
+            res.clearCookie("refreshToken", { // If you implement refresh tokens
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "strict"
+            });
+
+            // 4. Send success response
+            return res.status(200).json({
+                success: true,
+                message: "Đã đăng xuất "
+            });
+
+        } catch (error) {
+            console.error("Logout error:", error);
+            return next(createError(500, "Logout failed"));
         }
     }
 }

@@ -8,6 +8,12 @@ const port = 8800
 app.use(express.json())
 app.use("/api",rootRoutes)
 app.use(cookieParser())
+app.use((err, req, res, next) => {
+    const statusCode = err.status || 500;
+    const message = err.message || "Đã xảy ra lỗi server";
+    res.status(statusCode).json({ message });
+});
+
 
 try {
     await prisma.$connect();
