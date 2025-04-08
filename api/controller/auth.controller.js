@@ -117,6 +117,7 @@ export const authController = {
                 message: "Đăng nhập thành công",
                 token: accessToken, // Tùy chọn: trả về token nếu client cần
                 user: {
+                    userName :userExist.userName,
                     id: userExist.id,
                     email: userExist.email,
                 },

@@ -1,0 +1,115 @@
+.featured {
+  height: 600px;
+  display: flex;
+  justify-content: center;
+  background-color: #013914;
+  color: white;
+  font-family: "Montserrat", sans-serif;  
+  ._container {
+    width: 90%;
+    display: flex;
+    align-items: center;
+
+    .left {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+
+      h1 {
+        font-size: 50px;
+        font-weight: 700;
+
+        span {
+          font-style: italic;
+          font-weight: 500;
+        }
+      }
+
+      .search {
+        background-color: white;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        overflow: hidden;
+
+        .searchInput {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-grow: 1; 
+          
+          img {
+            width: 20px;
+            height: 20px;
+            margin: 10px;
+          }
+
+          input {
+            width: 100%; 
+            border: none;
+            outline: none;
+            color: gray;
+            padding: 10px 0; 
+            
+            &::placeholder {
+              color: gray;
+            }
+          }
+        }
+
+        button {
+          width: 120px;
+          height: 50px;
+          border: none;
+          background-color: #1dbf73;
+          color: white;
+          cursor: pointer;
+          transition: all 0.3s ease; 
+          
+          &:hover { 
+            background-color: darken(#1dbf73, 20%);
+          }
+        }
+      }
+
+      .popular {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap; 
+        span {
+          width: max-content;
+        }
+
+        button {
+          width: max-content;
+          color: white;
+          border: 1px solid white;
+          padding: 5px 10px;
+          border-radius: 20px;
+          background-color: transparent;
+          font-size: 14px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          
+          &:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+          }
+        }
+      }
+    }
+
+    .right {
+      height: 100%;
+      display: flex;
+      justify-content: flex-end;
+      
+      img {
+        height: 100%;
+        max-height: 500px; 
+        object-fit: contain;
+      }
+    }
+  }
+}

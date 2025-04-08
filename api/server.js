@@ -2,9 +2,11 @@ import { PrismaClient } from "@prisma/client";
 import express from "express";
 import { rootRoutes } from "./routes/rootRoutes.js";
 import cookieParser from "cookie-parser"
+import cors from "cors"
 const prisma = new PrismaClient()
 const app = express()
 const port = 8800
+app.use(cors({origin:"http://localhost:5173", credentials:true}))
 app.use(express.json())
 app.use("/api",rootRoutes)
 app.use(cookieParser())
