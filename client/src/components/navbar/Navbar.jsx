@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import './Navbar.scss'
 import { Link, useLocation } from 'react-router-dom';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { newRequest } from '../../utils/newRequest.js';
 
@@ -24,10 +23,10 @@ export const Navbar = () => {
   const currentUser = JSON.parse(localStorage.getItem("currentUser"))
   const handleLogout = async ()=>{
     try {
-      await newRequest.post("/logout")
-      localStorage.setItem("currentUser", null)
+      await newRequest.post("/auth/logout")
+      localStorage.removeItem("currentUser")
+      window.location.reload()
       navigate("/")
-
     } catch (err) {
       console.log(err)
       
@@ -65,7 +64,10 @@ export const Navbar = () => {
                                 }
                                 <Link to='/orders'>Orders</Link>
                                 <Link to='/messages'>Messages</Link>
-                                <Link onClick={handleLogout()}>Logout</Link>
+                                <Link onClick={(e)=>{
+                                  e.preventDefault()
+                                  handleLogout()
+                                }}>Logout</Link>
 
                             </div>}
                         </div>)
