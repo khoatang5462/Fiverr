@@ -74,16 +74,28 @@ model Reviews {
 }
 
 model Users {
-  id         Int       @id @default(autoincrement())
-  userName   String    @unique(map: "userName") @db.VarChar(255)
-  email      String    @unique(map: "email") @db.VarChar(255)
-  password   String    @db.VarChar(255)
-  img        String?   @db.VarChar(255)
-  country    String?   @db.VarChar(100)
-  phone      String?   @db.VarChar(20)
-  desc       String?   @db.Text
-  isSeller   Boolean?  @default(false)
-  created_at DateTime? @default(now()) @db.Timestamp(0)
-  updated_at DateTime? @default(now()) @db.Timestamp(0)
-  face_app_id String?   @db.VarChar(255)
+  id             Int              @id @default(autoincrement())
+  userName       String           @unique(map: "userName") @db.VarChar(255)
+  email          String           @unique(map: "email") @db.VarChar(255)
+  password       String           @db.VarChar(255)
+  img            String?          @db.VarChar(255)
+  country        String?          @db.VarChar(100)
+  phone          String?          @db.VarChar(20)
+  desc           String?          @db.Text
+  isSeller       Boolean?         @default(false)
+  created_at     DateTime?        @default(now()) @db.Timestamp(0)
+  updated_at     DateTime?        @default(now()) @db.Timestamp(0)
+  face_app_id    String?          @db.VarChar(255)
+  ForgotPassword ForgotPassword[]
+}
+
+model ForgotPassword {
+  forgot_code String    @id @db.VarChar(255)
+  userId      Int
+  expired     DateTime  @db.DateTime(0)
+  created_at  DateTime? @default(now()) @db.Timestamp(0)
+  updated_at  DateTime? @default(now()) @db.Timestamp(0)
+  Users       Users     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "ForgotPassword_ibfk_1")
+
+  @@index([userId], map: "userId")
 }

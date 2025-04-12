@@ -2,7 +2,7 @@ import { useState } from 'react'
 import './App.css'
 import { Route, Routes, Outlet, createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { Footer, GigCard, Navbar, TrustedBy } from './components/index.component'
-import { Add, Gig, Home, Login, Message, Messages, MyGigs, Orders, Pay, Register, Success } from './page/index.page'
+import { Add, ForgotPass, Gig, Home, Login, Message, Messages, MyGigs, Orders, Pay, Register, Success } from './page/index.page'
 
 function App() {
   const Layout = () => {
@@ -69,6 +69,10 @@ function App() {
         {
           path: '/success',
           element: <Success/>
+        },
+        {
+          path:'/forgotpass',
+          element: <ForgotPass/>
         }
       ]
     }

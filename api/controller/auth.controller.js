@@ -4,7 +4,8 @@ import jwt from 'jsonwebtoken';
 import { transporter } from '../config/transporter.js';
 import { createAccessToken } from '../config/jwt.js';
 import { createError } from '../utils/createError.js';
-
+import crypto, { subtle } from 'crypto'
+import { sendMailForgotPassword } from '../utils/sendMail.js';
 const prisma = new PrismaClient();
 
 // Helper function to clear auth cookies
@@ -140,19 +141,19 @@ export const authController = {
     logout: async (req, res, next) => {
         try {
             const token = req.cookies?.accessToken || req.headers.authorization?.split(' ')[1];
-            
+
             if (!token) {
                 clearAuthCookies(res);
-                return res.status(200).json({ 
+                return res.status(200).json({
                     success: true,
-                    message: "Đã đăng xuất" 
+                    message: "Đã đăng xuất"
                 });
             }
 
             let decoded;
             try {
                 decoded = jwt.verify(token, process.env.JWT_KEY);
-                
+
                 if (decoded.exp * 1000 < Date.now()) {
                     clearAuthCookies(res);
                     return res.status(200).json({
@@ -191,6 +192,81 @@ export const authController = {
             return next(createError(500, "Đã xảy ra lỗi khi đăng xuất"));
         } finally {
             await prisma.$disconnect();
+        }
+    },
+    forgotPassword: async (req, res, next) => {
+        try {
+            const { email } = req.body;
+            
+            // 1. Kiểm tra email có tồn tại không
+            const userExist = await prisma.users.findUnique({
+                where: { email }
+            });
+            
+            if (!userExist) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: "Email không tồn tại" 
+                });
+            }
+            
+            // 2. Tạo mã 6 ký tự (vừa làm forgot_code vừa làm mã xác nhận)
+            const code = crypto.randomBytes(6).toString('hex').slice(0,6).toUpperCase(  );
+            const expiredAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 tiếng
+            
+            // 3. Chuẩn bị email
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: email,
+                subject: "Mã xác nhận đặt lại mật khẩu",
+                html: `<h1>Mã xác nhận của bạn: ${code}</h1>`
+            };
+            
+            // 4. Kiểm tra và cập nhật/tạo bản ghi
+            const existingRecord = await prisma.forgotPassword.findFirst({
+                where: { userId: userExist.id }
+            });
+            
+            if (existingRecord) {
+                await prisma.forgotPassword.update({
+                    where: { forgot_code: existingRecord.forgot_code },
+                    data: {
+                        forgot_code: code, // Cập nhật luôn mã mới
+                        expired: expiredAt,
+                        updated_at: new Date()
+                    }
+                });
+            } else {
+                await prisma.forgotPassword.create({
+                    data: {
+                        forgot_code: code, // Sử dụng luôn làm mã xác nhận
+                        userId: userExist.id,
+                        expired: expiredAt,
+                        created_at: new Date(),
+                        updated_at: new Date()
+                    }
+                });
+            }
+            
+            // 5. Gửi email
+            transporter.sendMail(mailOptions, (err, info) => {
+                if (err) {
+                    console.error('Lỗi gửi email:', err);
+                    return res.status(500).json({ 
+                        success: false, 
+                        message: "Gửi mail thất bại" 
+                    });
+                }
+                return res.status(200).json({ 
+                    success: true, 
+                    message: "Mã xác nhận đã được gửi đến email của bạn",
+                    // code: code // (Tùy chọn) Trả về mã để test
+                });
+            });
+    
+        } catch (error) {
+            console.error('Lỗi hệ thống:', error);
+            next(createError(500, 'Lỗi hệ thống'));
         }
     }
 };

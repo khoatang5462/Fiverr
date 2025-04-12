@@ -1,4 +1,5 @@
 export * from './add/Add'
+export * from './forgotPass/ForgotPass'
 export * from './gig/Gig'
 export * from './gigs/Gigs'
 export * from './home/Home'
